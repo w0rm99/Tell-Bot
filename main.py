@@ -4,39 +4,50 @@ import os
 from telegram import Update
 from telegram.ext import filters, MessageHandler, ApplicationBuilder, CommandHandler, ContextTypes
 
+# Ensure the required module is installed
+try:
+    import telegram
+    from telegram.ext import filters, MessageHandler, ApplicationBuilder, CommandHandler, ContextTypes
+except ImportError:
+    subprocess.check_call(["pip", "install", "python-telegram-bot"])
+
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
 
+# Initialize the current working directory
+current_directory = os.getcwd()
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text="I am your bot")
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.message.text == 'ls':
-        output1 = subprocess.check_output('ls', shell=True).decode('utf-8')
-        print(output1)
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=output1)
+    global current_directory
+    try:
+        command = update.message.text.strip()
 
-    elif update.message.text == 'cd':
-        output1 = subprocess.check_output('cd', shell=True).decode('utf-8')
-        print(output1)
+        if command.startswith('ls'):
+            output = subprocess.check_output(command, cwd=current_directory, shell=True).decode('utf-8')
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=output)
 
-    elif update.message.text == 'pwd':
-        output1 = subprocess.check_output('pwd', shell=True).decode('utf-8')
-        print(output1)
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=output1)
+        elif command.startswith('cd'):
+            new_directory = command[3:].strip()
+            os.chdir(new_directory)
+            current_directory = os.getcwd()
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Changed directory to {current_directory}")
 
-    else:
-        try:
-            output2 = subprocess.check_output(update.message.text, shell=True).decode('utf-8')
-            print(output2)
-            if output2:
-                await context.bot.send_message(chat_id=update.effective_chat.id, text=output2)
-            else:
-                await context.bot.send_message(chat_id=update.effective_chat.id, text='no output')
-        except subprocess.CalledProcessError as e:
-            await context.bot.send_message(chat_id=update.effective_chat.id, text=str(e))
+        elif command == 'pwd':
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=current_directory)
+
+        else:
+            output = subprocess.check_output(command, cwd=current_directory, shell=True).decode('utf-8')
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=output if output else 'no output')
+
+    except subprocess.CalledProcessError as e:
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=str(e))
+    except Exception as e:
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=str(e))
 
 if __name__ == '__main__':
     # API Key goes here
