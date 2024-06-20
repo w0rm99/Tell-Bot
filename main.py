@@ -20,7 +20,7 @@ logging.basicConfig(
 current_directory = os.getcwd()
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await context.bot.send_message(chat_id=update.effective_chat.id, text="I am your bot")
+    await context.bot.send_message(chat_id=update.effective_chat.id, text="Hack your system Enter your command")
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global current_directory
